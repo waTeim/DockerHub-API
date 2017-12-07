@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+bin/
 build/
 develop-eggs/
 dist/
@@ -17,6 +18,7 @@ eggs/
 .eggs/
 lib/
 lib64/
+include/
 parts/
 sdist/
 var/
@@ -32,6 +34,7 @@ var/
 
 # Installer logs
 pip-log.txt
+pip-selfcheck.json
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports

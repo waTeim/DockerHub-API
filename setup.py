@@ -34,6 +34,6 @@ setup(
         author_email='@mumblepins',
         description='',
         setup_requires=['pytest-runner'],
+        install_requires=['requests', 'furl'],
         tests_require=['pytest']
-
 )
