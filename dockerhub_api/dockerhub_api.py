@@ -442,6 +442,27 @@ class DockerHub(object):
         """
         return self._do_requests_get(self._api_url('user')).json()
 
+    def add_group(self, user, repository, group, group_id):
+        """
+
+        Args:
+            user:
+            repository:
+            group:
+            group_id:
+
+        Returns:
+
+        """
+        user = user_cleaner(user)
+        url = self._api_url('repositories/{}/{}/groups'.format(user, repository))
+        return self._do_requests_post(url, {
+            "group": group.lower(),
+            "group_id": group_id 
+        }).json()
+
+
+
     def add_collaborator(self, user, repository, collaborator):
         """
 
@@ -546,6 +567,23 @@ class DockerHub(object):
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/buildtrigger/history'.format(user, repository))
         return self._iter_requests_get(url, **kwargs)
+
+    def groups(self, user, repository, **kwargs):
+        """
+
+        Args:
+            user:
+            repository:
+            **kwargs:
+
+        Returns:
+
+        """
+        user = user_cleaner(user)
+        url = self._api_url('repositories/{}/{}/groups'.format(user, repository)) 
+        return self._iter_requests_get(url, **kwargs)
+
+
 
     def collaborators(self, user, repository, **kwargs):
         """
