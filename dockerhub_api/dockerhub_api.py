@@ -236,6 +236,8 @@ class DockerHub(object):
             elif 'Content-Type' not in kwargs['headers']:
                 kwargs['headers']['Content-Type'] = "application/json"
 
+            kwargs['headers']['X-CSRFToken'] = self._session.cookies.get('csrftoken')
+
             url, query = parse_url(address)
             if query:
                 address = url
@@ -458,7 +460,7 @@ class DockerHub(object):
         url = self._api_url('repositories/{}/{}/groups'.format(user, repository))
         return self._do_requests_post(url, {
             "group": group.lower(),
-            "group_id": group_id 
+            "group_id": group_id
         }).json()
 
 
@@ -580,7 +582,7 @@ class DockerHub(object):
 
         """
         user = user_cleaner(user)
-        url = self._api_url('repositories/{}/{}/groups'.format(user, repository)) 
+        url = self._api_url('repositories/{}/{}/groups'.format(user, repository))
         return self._iter_requests_get(url, **kwargs)
 
 
@@ -640,7 +642,7 @@ class DockerHub(object):
             'source_name':         details['source_name'] if 'source_name' in details else 'master'
         }).json()
 
-    def create_repository(self, user, repository, details):
+    def create_repository(self, user, repository, details = {"is_private": False}):
         """
 
         Args:
