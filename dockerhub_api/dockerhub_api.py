@@ -20,14 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
 from __future__ import print_function
 
 import json
 
 import requests
-from furl import furl
 from requests.auth import AuthBase
+
+from furl import furl
 
 
 class TimeoutError(Exception):
@@ -45,7 +45,6 @@ class AuthenticationError(Exception):
 class DockerHubAuth(AuthBase):
     def __init__(self, requests_post, api_url, username=None, password=None, token=None, delete_creds=True):
         """
-
         Args:
             requests_post (:py:meth:`DockerHub._do_requests_post`):
             api_url (str):
@@ -86,17 +85,10 @@ class DockerHubAuth(AuthBase):
 
     def _get_authorization_token(self):
         """Actually gets the authentication token
-
         Raises:
             AuthenticationError: didn't login right
-
         """
-        r = self._requests_post(
-                self._api_url,
-                {
-                    "username": self._username,
-                    "password": self._password
-                })
+        r = self._requests_post(self._api_url, {"username": self._username, "password": self._password})
         if not r.ok:
             raise AuthenticationError("Error Status {}:\n{}".format(r.status_code, json.dumps(r.json(), indent=2)))
         self._token = r.json()['token']
@@ -104,10 +96,8 @@ class DockerHubAuth(AuthBase):
 
 def parse_url(url):
     """Parses a url into the base url and the query params
-
     Args:
         url (str): url with query string, or not
-
     Returns:
         (str, `dict` of `lists`): url, query (dict of values)
     """
@@ -122,13 +112,10 @@ def parse_url(url):
 
 def user_cleaner(user):
     """Converts none or _ to library, makes username lowercase
-
     Args:
         user (str):
-
     Returns:
         str: cleaned username
-
     """
     if user == "_" or user == "":
         return "library"
@@ -140,7 +127,6 @@ def user_cleaner(user):
 
 class DockerHub(object):
     """Actual class for making API calls
-
     Args:
         username (str, optional):
         password(str, optional):
@@ -181,10 +167,8 @@ class DockerHub(object):
     @property
     def return_lists(self):
         """Whether functions should return generators (False) or lists (True)
-
         Returns:
             bool
-
         """
         return self._return_lists
 
@@ -253,7 +237,7 @@ class DockerHub(object):
         else:
             try:
                 resp.raise_for_status()
-            except:
+            except Exception:
                 print(resp.json())
                 print(resp.headers)
                 raise
@@ -315,17 +299,13 @@ class DockerHub(object):
 
     def login(self, username=None, password=None, token=None, delete_creds=True):
         """Logs into Docker hub and gets a token
-
         Either username and password or token should be specified
-
         Args:
             username (str, optional):
             password (str, optional):
             token (str, optional):
             delete_creds (bool, optional):
-
         Returns:
-
         """
 
         self._username = user_cleaner(username)
@@ -349,14 +329,11 @@ class DockerHub(object):
 
     def comments(self, user, repository, **kwargs):
         """
-
         Args:
             user:
             repository:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{0}/{1}/comments'.format(user, repository))
@@ -364,14 +341,11 @@ class DockerHub(object):
 
     def repository(self, user, repository, **kwargs):
         """
-
         Args:
             user:
             repository:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{0}/{1}'.format(user, repository))
@@ -379,13 +353,10 @@ class DockerHub(object):
 
     def repositories(self, user, **kwargs):
         """
-
         Args:
             user:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{0}'.format(user))
@@ -393,13 +364,10 @@ class DockerHub(object):
 
     def repositories_starred(self, user, **kwargs):
         """
-
         Args:
             user:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('users/{0}/repositories/starred'.format(user))
@@ -407,14 +375,11 @@ class DockerHub(object):
 
     def tags(self, user, repository, **kwargs):
         """
-
         Args:
             user:
             repository:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{0}/{1}/tags'.format(user, repository))
@@ -422,13 +387,10 @@ class DockerHub(object):
 
     def user(self, user, **kwargs):
         """
-
         Args:
             user:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('users/{0}'.format(user))
@@ -438,60 +400,42 @@ class DockerHub(object):
 
     def logged_in_user(self):
         """
-
         Returns:
-
         """
         return self._do_requests_get(self._api_url('user')).json()
 
     def add_group(self, user, repository, group, group_id):
         """
-
         Args:
             user:
             repository:
             group:
             group_id:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/groups'.format(user, repository))
-        return self._do_requests_post(url, {
-            "group": group.lower(),
-            "group_id": group_id
-        }).json()
-
-
+        return self._do_requests_post(url, {"group": group.lower(), "group_id": group_id}).json()
 
     def add_collaborator(self, user, repository, collaborator):
         """
-
         Args:
             user:
             repository:
             collaborator:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/collaborators'.format(user, repository))
-        return self._do_requests_post(url, {
-            "user": collaborator.lower()
-        }).json()
+        return self._do_requests_post(url, {"user": collaborator.lower()}).json()
 
     def build_details(self, user, repository, code):
         """
-
         Args:
             user:
             repository:
             code:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/buildhistory/{}'.format(user, repository, code))
@@ -499,14 +443,11 @@ class DockerHub(object):
 
     def build_history(self, user, repository, **kwargs):
         """
-
         Args:
             user:
             repository:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/buildhistory'.format(user, repository))
@@ -514,14 +455,11 @@ class DockerHub(object):
 
     def build_links(self, user, repository, **kwargs):
         """
-
         Args:
             user:
             repository:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/links'.format(user, repository))
@@ -529,13 +467,10 @@ class DockerHub(object):
 
     def build_settings(self, user, repository):
         """
-
         Args:
             user:
             repository:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/autobuild'.format(user, repository))
@@ -543,13 +478,10 @@ class DockerHub(object):
 
     def build_trigger(self, user, repository):
         """
-
         Args:
             user:
             repository:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/buildtrigger'.format(user, repository))
@@ -557,14 +489,11 @@ class DockerHub(object):
 
     def build_trigger_history(self, user, repository, **kwargs):
         """
-
         Args:
             user:
             repository:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/buildtrigger/history'.format(user, repository))
@@ -572,31 +501,23 @@ class DockerHub(object):
 
     def groups(self, user, repository, **kwargs):
         """
-
         Args:
             user:
             repository:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/groups'.format(user, repository))
         return self._iter_requests_get(url, **kwargs)
 
-
-
     def collaborators(self, user, repository, **kwargs):
         """
-
         Args:
             user:
             repository:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/collaborators'.format(user, repository))
@@ -604,59 +525,57 @@ class DockerHub(object):
 
     def create_build_link(self, user, repository, to_repo):
         """
-
         Args:
             user:
             repository:
             to_repo:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/links'.format(user, repository))
-        return self._do_requests_post(url, {
-            "to_repo": to_repo
-        }).json()
+        return self._do_requests_post(url, {"to_repo": to_repo}).json()
+
+    def create_personal_access_token(self, label):
+        """
+        Args:
+        Returns:
+        """
+        url = self._api_url('access-tokens')
+        return self._do_requests_post(url, {"token_label": label, "scopes": ["repo:read"]}).json()
 
     def create_build_tag(self, user, repository, details):
         """
-
         Args:
             user:
             repository:
             details:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/autobuild/tags'.format(user, repository))
-        return self._do_requests_post(url, {
-            'isNew':               True,
-            'namespace':           user,
-            'repoName':            repository,
-            'name':                details['name'] if 'name' in details else 'latest',
-            'dockerfile_location': details['dockerfile_location'] if 'dockerfile_location' in details else '/',
-            'source_type':         details['source_type'] if 'source_type' in details else 'Branch',
-            'source_name':         details['source_name'] if 'source_name' in details else 'master'
-        }).json()
+        return self._do_requests_post(
+            url, {
+                'isNew': True,
+                'namespace': user,
+                'repoName': repository,
+                'name': details['name'] if 'name' in details else 'latest',
+                'dockerfile_location': details['dockerfile_location'] if 'dockerfile_location' in details else '/',
+                'source_type': details['source_type'] if 'source_type' in details else 'Branch',
+                'source_name': details['source_name'] if 'source_name' in details else 'master'
+            }).json()
 
-    def create_repository(self, user, repository, details = {"is_private": False}):
+    def create_repository(self, user, repository, details={"is_private": False}):
         """
-
         Args:
             user:
             repository:
             details:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories')
         data = {
-            'name':      repository,
+            'name': repository,
             'namespace': user,
         }
         details.update(data)
@@ -664,21 +583,18 @@ class DockerHub(object):
 
     def create_automated_build(self, user, repository, details):
         """
-
         Args:
             user:
             repository:
             details:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/autobuild'.format(user, repository))
         data = {
-            'name':                repository,
-            'namespace':           user,
-            'active':              True,
+            'name': repository,
+            'namespace': user,
+            'active': True,
             'dockerhub_repo_name': "{}/{}".format(user, repository)
         }
 
@@ -687,52 +603,39 @@ class DockerHub(object):
 
     def create_webhook(self, user, repository, webhook_name):
         """
-
         Args:
             user:
             repository:
             webhook_name:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/webhooks'.format(user, repository))
-        data = {
-            'name': webhook_name
-        }
+        data = {'name': webhook_name}
         return self._do_requests_post(url, data).json()
 
     def create_webhook_hook(self, user, repository, webhook_id, webhook_url):
         """
-
         Args:
             user:
             repository:
             webhook_id:
             webhook_url:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/webhooks/{}/hooks'.format(user, repository, webhook_id))
-        data = {
-            'hook_url': webhook_url
-        }
+        data = {'hook_url': webhook_url}
         return self._do_requests_post(url, data).json()
 
     def delete_build_link(self, user, repository, build_id):
         """
-
         Args:
             user:
             repository:
             build_id:
-
         Returns:
             boolean: returns true if successful delete call
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/links/{}'.format(user, repository, build_id))
@@ -742,15 +645,12 @@ class DockerHub(object):
 
     def delete_build_tag(self, user, repository, tag_id):
         """
-
         Args:
             user:
             repository:
             tag_id:
-
         Returns:
             boolean: returns true if successful delete call
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/autobuild/tags/{}'.format(user, repository, tag_id))
@@ -759,15 +659,12 @@ class DockerHub(object):
 
     def delete_tag(self, user, repository, tag):
         """
-
         Args:
             user:
             repository:
             tag:
-
         Returns:
             boolean: returns true if successful delete call
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/tags/{}'.format(user, repository, tag))
@@ -776,15 +673,12 @@ class DockerHub(object):
 
     def delete_collaborator(self, user, repository, collaborator):
         """
-
         Args:
             user:
             repository:
             collaborator:
-
         Returns:
             boolean: returns true if successful delete call
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/collaborators/{}'.format(user, repository, collaborator.lower()))
@@ -793,14 +687,11 @@ class DockerHub(object):
 
     def delete_repository(self, user, repository):
         """
-
         Args:
             user:
             repository:
-
         Returns:
             boolean: returns true if successful delete call
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}'.format(user, repository))
@@ -810,15 +701,12 @@ class DockerHub(object):
 
     def delete_webhook(self, user, repository, webhook_id):
         """
-
         Args:
             user:
             repository:
             webhook_id:
-
         Returns:
             boolean: returns true if successful delete call
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/webhooks/{}'.format(user, repository, webhook_id))
@@ -828,47 +716,39 @@ class DockerHub(object):
 
     def registry_settings(self):
         """
-
         Returns:
-
         """
         url = self._api_url('users/{}/registry-settings'.format(self.username))
         return self._do_requests_get(url).json()
 
     def set_build_tag(self, user, repository, build_id, details):
         """
-
         Args:
             user:
             repository:
             build_id:
             details:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/autobuild/tags/{}'.format(user, repository, build_id))
         data = {
-            'id':                  build_id,
-            'name':                'latest',
+            'id': build_id,
+            'name': 'latest',
             'dockerfile_location': '/',
-            'source_type':         'Branch',
-            'source_name':         'master'
+            'source_type': 'Branch',
+            'source_name': 'master'
         }
         data.update(details)
         return self._do_requests_put(url, details).json()
 
     def set_repository_description(self, user, repository, descriptions):
         """
-
         Args:
             user:
             repository:
             descriptions:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}'.format(user, repository))
@@ -884,14 +764,11 @@ class DockerHub(object):
 
     def star_repository(self, user, repository):
         """
-
         Args:
             user:
             repository:
-
         Returns:
             boolean: returns true if successful
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/stars'.format(user, repository))
@@ -901,14 +778,11 @@ class DockerHub(object):
 
     def unstar_repository(self, user, repository):
         """
-
         Args:
             user:
             repository:
-
         Returns:
             boolean: returns true if successful
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/stars'.format(user, repository))
@@ -918,42 +792,29 @@ class DockerHub(object):
 
     def trigger_build(self, user, repository, details):
         """
-
         Args:
             user:
             repository:
             details:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/autobuild/trigger-build'.format(user, repository))
-        data = {
-            'dockerfile_location': '/',
-            'source_type':         'Branch',
-            'source_name':         'master'
-        }
+        data = {'dockerfile_location': '/', 'source_type': 'Branch', 'source_name': 'master'}
         data.update(details)
         return self._do_requests_post(url, data).json()
 
     def webhooks(self, user, repository, **kwargs):
         """
-
         Args:
             user:
             repository:
             **kwargs:
-
         Returns:
-
         """
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/webhooks'.format(user, repository))
         return self._iter_requests_get(url, **kwargs)
 
-
-if __name__ == '__main__':
-    pass
 
 __all__ = ["DockerHub", "DockerHubAuth", "AuthenticationError", "ConnectionError", "TimeoutError"]
