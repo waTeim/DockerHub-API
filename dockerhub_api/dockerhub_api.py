@@ -382,7 +382,7 @@ class DockerHub(object):
         Returns:
         """
         user = user_cleaner(user)
-        url = self._api_url('repositories/{0}/{1}/tags'.format(user, repository))
+        url = self._api_url('repositories/{0}/{1}/tags/list'.format(user, repository))
         return self._iter_requests_get(url, **kwargs)
 
     def user(self, user, **kwargs):
