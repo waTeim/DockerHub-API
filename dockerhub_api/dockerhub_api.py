@@ -277,7 +277,6 @@ class DockerHub(object):
                 # print _next
 
             resp = resp.json()
-            print(resp)
 
             for i in resp['results']:
                 yield i
