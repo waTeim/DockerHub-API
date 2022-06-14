@@ -43,19 +43,21 @@ class AuthenticationError(Exception):
 
 
 class DockerHubAuth(AuthBase):
-    def __init__(self, requests_post, api_url, username=None, password=None, token=None, delete_creds=True):
+    def __init__(self, requests_action, api_url, username=None, password=None, token=None, delete_creds=True,scope=None):
         """
         Args:
-            requests_post (:py:meth:`DockerHub._do_requests_post`):
+            requests_action (:py:meth:`DockerHub._do_requests_(action)`):
             api_url (str):
             username (str, optional):
             password (str, optional):
             token (str, optional):
             delete_creds (bool, optional):
+            scope (str,optional):
         """
 
         self._api_url = api_url
-        self._requests_post = requests_post
+        self._requests_action = requests_action
+        self._scope = scope
         if token is not None:
             self._token = token
             return
@@ -80,7 +82,8 @@ class DockerHubAuth(AuthBase):
         return not self == other
 
     def __call__(self, r):
-        r.headers['Authorization'] = "JWT {}".format(self._token)
+        if self._scope == None: r.headers['Authorization'] = "JWT {}".format(self._token)
+        else: r.headers['Bearer'] = "{}".format(self._token)
         return r
 
     def _get_authorization_token(self):
@@ -88,7 +91,10 @@ class DockerHubAuth(AuthBase):
         Raises:
             AuthenticationError: didn't login right
         """
-        r = self._requests_post(self._api_url, {"username": self._username, "password": self._password})
+        if self._scope == None:
+            r = self._requests_action(self._api_url, {"username": self._username, "password": self._password})
+        else:
+            r = self._requests_action(self._api_url, params={ "scope":self._scope }, auth=(self._username,self._password))
         if not r.ok:
             raise AuthenticationError("Error Status {}:\n{}".format(r.status_code, json.dumps(r.json(), indent=2)))
         self._token = r.json()['token']
@@ -297,7 +303,7 @@ class DockerHub(object):
 
     # </editor-fold>
 
-    def login(self, username=None, password=None, token=None, delete_creds=True):
+    def login(self, username=None, password=None, token=None, delete_creds=True,auth_endpoint='users/login',scope=None):
         """Logs into Docker hub and gets a token
         Either username and password or token should be specified
         Args:
@@ -313,11 +319,10 @@ class DockerHub(object):
         self._token = token
         if token is not None:
             # login with token
-            self._auth = DockerHubAuth(self._do_requests_post, self._api_url('users/login'), token=token)
+            self._auth = DockerHubAuth(self._do_requests_post, self._api_url(auth_endpoint), token=token)
         elif username is not None and password is not None:
             # login with user/pass
-            self._auth = DockerHubAuth(self._do_requests_post, self._api_url('users/login'), username=username,
-                                       password=password)
+            self._auth = DockerHubAuth(self._do_requests_post, self._api_url(auth_endpoint), username=username, password=password,scope=scope)
         else:
             # don't login
             return
