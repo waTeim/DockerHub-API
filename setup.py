@@ -25,7 +25,7 @@ from setuptools import setup, find_packages
 
 setup(
         name='DockerHub-API',
-        version='0.6',
+        version='0.6.1',
 
         packages=['dockerhub_api'],
         url='',
