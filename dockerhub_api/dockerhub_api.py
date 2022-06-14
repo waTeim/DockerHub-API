@@ -145,8 +145,7 @@ class DockerHub(object):
     """
 
     # <editor-fold desc="Class Management">
-    def __init__(self, username=None, password=None, token=None, url=None, version='v2', delete_creds=True,
-                 return_lists=False):
+    def __init__(self, username=None, password=None, token=None, url=None, version='v2', auth_endpoint='users/login',scope=None,delete_creds=True, return_lists=False):
 
         self._version = version
         self._url = '{0}/{1}'.format(url or 'https://hub.docker.com', self.version)
@@ -156,7 +155,7 @@ class DockerHub(object):
         self._username = None
         self._password = None
         self._return_lists = return_lists
-        self.login(username, password, token, delete_creds)
+        self.login(username, password, token, delete_creds,auth_endpoint,scope)
 
     def __enter__(self):
         return self
