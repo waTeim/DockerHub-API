@@ -92,6 +92,7 @@ class DockerHubAuth(AuthBase):
             AuthenticationError: didn't login right
         """
         if self._scope == None:
+            print("sending to",self._api_url)
             r = self._requests_action(self._api_url, {"username": self._username, "password": self._password})
         else:
             r = self._requests_action(self._api_url, params={ "scope":self._scope }, auth=(self._username,self._password))
@@ -145,7 +146,7 @@ class DockerHub(object):
     """
 
     # <editor-fold desc="Class Management">
-    def __init__(self, username=None, password=None, token=None, url=None, version='v2', auth_endpoint='users/login',scope=None,delete_creds=True, return_lists=False):
+    def __init__(self,username=None,password=None,token=None,url=None,version='v2',auth_endpoint='users/login',scope=None,delete_creds=True,return_lists=False):
 
         self._version = version
         self._url = '{0}/{1}'.format(url or 'https://hub.docker.com', self.version)
@@ -155,7 +156,8 @@ class DockerHub(object):
         self._username = None
         self._password = None
         self._return_lists = return_lists
-        self.login(username, password, token, delete_creds,auth_endpoint,scope)
+        print("endpoint = ",auth_endpoint)
+        self.login(username,password,token,delete_creds,auth_endpoint,scope)
 
     def __enter__(self):
         return self
@@ -318,10 +320,13 @@ class DockerHub(object):
         self._token = token
         if token is not None:
             # login with token
-            self._auth = DockerHubAuth(self._do_requests_post, self._api_url(auth_endpoint), token=token)
+            self._auth = DockerHubAuth(self._do_requests_post,self._api_url(auth_endpoint),token=token,scope=scope)
         elif username is not None and password is not None:
             # login with user/pass
-            self._auth = DockerHubAuth(self._do_requests_post, self._api_url(auth_endpoint), username=username, password=password,scope=scope)
+            print("scope = ",scope)
+            print("url = ",self._api_url)
+            print("extended url = ",self._api_url(auth_endpoint))
+            self._auth = DockerHubAuth(self._do_requests_post,self._api_url(auth_endpoint),username=username,password=password,scope=scope)
         else:
             # don't login
             return
