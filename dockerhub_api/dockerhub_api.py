@@ -43,32 +43,41 @@ class AuthenticationError(Exception):
 
 
 class DockerHubAuth(AuthBase):
-    def __init__(self, requests_action, api_url, username=None, password=None, token=None, delete_creds=True,scope=None):
+    def __init__(self, requests_action,api_url,method=1,args={},token=None,delete_creds=True):
         """
         Args:
             requests_action (:py:meth:`DockerHub._do_requests_(action)`):
             api_url (str):
-            username (str, optional):
-            password (str, optional):
+            args (Dict[str,str],optional):
+            method (str,optional):
             token (str, optional):
             delete_creds (bool, optional):
-            scope (str,optional):
         """
 
         self._api_url = api_url
         self._requests_action = requests_action
-        self._scope = scope
+        self._method = method
+        self._args = args
         if token is not None:
             self._token = token
             return
-        if username is not None and password is not None:
-            self._username = username
-            self._password = password
+        if (
+            method == 1 
+            and args.get("username",None) is not None
+            and args.get("password",None) is not None
+        ) or (
+            method == 2
+            and args.get("username",None) is not None
+            and args.get("password",None) is not None
+            and args.get("service",None) is not None
+            and args.get("scope",None) is not None
+        ):
             self._get_authorization_token()
             if delete_creds:
-                self._username = None
-                self._password = None
+                del self._args['username']
+                del self._args['password']
             return
+
         raise ValueError("Need either username and password or token for authentication")
 
     @property
@@ -82,8 +91,8 @@ class DockerHubAuth(AuthBase):
         return not self == other
 
     def __call__(self, r):
-        if self._scope == None: r.headers['Authorization'] = "JWT {}".format(self._token)
-        else: r.headers['Bearer'] = "{}".format(self._token)
+        if self._method == 1: r.headers['Authorization'] = "JWT {}".format(self._token)
+        else: r.headers['Authorization'] = "Bearer {}".format(self._token)
         return r
 
     def _get_authorization_token(self):
@@ -91,11 +100,10 @@ class DockerHubAuth(AuthBase):
         Raises:
             AuthenticationError: didn't login right
         """
-        if self._scope == None:
-            print("sending to",self._api_url)
-            r = self._requests_action(self._api_url, {"username": self._username, "password": self._password})
+        if self._method == 1:
+            r = self._requests_action(self._api_url, {"username": self._args["username"], "password":self._args["password"]})
         else:
-            r = self._requests_action(self._api_url, params={ "scope":self._scope }, auth=(self._username,self._password))
+            r = self._requests_action(self._api_url, params={ "service":self._args["service"], "scope":self._args["scope"] }, auth=(self._args["username"],self._args["password"]))
         if not r.ok:
             raise AuthenticationError("Error Status {}:\n{}".format(r.status_code, json.dumps(r.json(), indent=2)))
         self._token = r.json()['token']
@@ -146,18 +154,16 @@ class DockerHub(object):
     """
 
     # <editor-fold desc="Class Management">
-    def __init__(self,username=None,password=None,token=None,url=None,version='v2',auth_endpoint='users/login',scope=None,delete_creds=True,return_lists=False):
-
+    def __init__(self,method=1,username=None,password=None,args={},token=None,url=None,version='v2',auth_endpoint='v2/users/login',delete_creds=True,return_lists=False):
         self._version = version
-        self._url = '{0}/{1}'.format(url or 'https://hub.docker.com', self.version)
+        self._url = '{0}/{1}'.format(url or 'https://hub.docker.com', self._version)
         self._session = requests.Session()
+        self._args = args
         self._auth = None
         self._token = None
-        self._username = None
-        self._password = None
         self._return_lists = return_lists
-        print("endpoint = ",auth_endpoint)
-        self.login(username,password,token,delete_creds,auth_endpoint,scope)
+        auth_url = '{0}/{1}'.format(url or 'https://hub.docker.com', auth_endpoint)
+        self.login(auth_url,method,username,password,args,token,delete_creds)
 
     def __enter__(self):
         return self
@@ -284,11 +290,13 @@ class DockerHub(object):
                 # print _next
 
             resp = resp.json()
+            if isinstance(resp,list): iterable = resp
+            else: iterable = resp['results']
 
-            for i in resp['results']:
+            for i in iterable:
                 yield i
 
-            if resp['next']:
+            if not isinstance(resp,list) and resp['next']:
                 _next = resp['next']
                 continue
             return
@@ -304,7 +312,9 @@ class DockerHub(object):
 
     # </editor-fold>
 
-    def login(self, username=None, password=None, token=None, delete_creds=True,auth_endpoint='users/login',scope=None):
+
+
+    def login(self,url,method=1,username=None,password=None,args={},token=None,delete_creds=True):
         """Logs into Docker hub and gets a token
         Either username and password or token should be specified
         Args:
@@ -315,25 +325,20 @@ class DockerHub(object):
         Returns:
         """
 
-        self._username = user_cleaner(username)
-        self._password = password
+        args['username'] = user_cleaner(username)
+        args['password'] = password
         self._token = token
         if token is not None:
             # login with token
-            self._auth = DockerHubAuth(self._do_requests_post,self._api_url(auth_endpoint),token=token,scope=scope)
-        elif username is not None and password is not None:
+            self._auth = DockerHubAuth(self._do_requests_post,url,method=method,args=args,token=token)
+        elif method == 1 and username is not None and password is not None:
             # login with user/pass
-            print("scope = ",scope)
-            print("url = ",self._api_url)
-            print("extended url = ",self._api_url(auth_endpoint))
-            self._auth = DockerHubAuth(self._do_requests_post,self._api_url(auth_endpoint),username=username,password=password,scope=scope)
+            self._auth = DockerHubAuth(self._do_requests_post,url,method=method,args=args,token=token)
+        elif method == 2 and username is not None and password is not None and args.get("scope",None) is not None and args.get("service",None) is not None:
+            self._auth = DockerHubAuth(self._do_requests_get,url,method=method,args=args,token=token)
         else:
             # don't login
             return
-
-        if delete_creds:
-            self._password = None
-
         self._token = self._auth.token
 
     def comments(self, user, repository, **kwargs):
@@ -368,7 +373,27 @@ class DockerHub(object):
         Returns:
         """
         user = user_cleaner(user)
-        url = self._api_url('repositories/{0}'.format(user))
+        url = self._api_url('/repositories/{0}'.format(user))
+        return self._iter_requests_get(url, **kwargs)
+
+    def project_repositories(self, project, **kwargs):
+        """
+        Args:
+            project:
+            **kwargs:
+        Returns:
+        """
+        url = self._api_url('/projects/{0}/repositories'.format(project))
+        return self._iter_requests_get(url, **kwargs)
+
+    def project_artifacts(self, project, repository, **kwargs):
+        """
+        Args:
+            project:
+            **kwargs:
+        Returns:
+        """
+        url = self._api_url('/projects/{0}/repositories/{1}/artifacts'.format(project,repository))
         return self._iter_requests_get(url, **kwargs)
 
     def repositories_starred(self, user, **kwargs):
@@ -649,7 +674,6 @@ class DockerHub(object):
         user = user_cleaner(user)
         url = self._api_url('repositories/{}/{}/links/{}'.format(user, repository, build_id))
         resp = self._do_requests_delete(url)
-        # print_response(resp)
         return resp.status_code == 204
 
     def delete_build_tag(self, user, repository, tag_id):
